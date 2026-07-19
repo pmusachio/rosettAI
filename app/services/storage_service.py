@@ -1,9 +1,10 @@
+from typing import Optional
 import uuid
 import mimetypes
 from supabase import create_client, Client
 from app.config import SUPABASE_URL, SUPABASE_KEY
 
-supabase: Client | None = None
+supabase: Optional[Client] = None
 if SUPABASE_URL and SUPABASE_KEY:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 

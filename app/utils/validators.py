@@ -1,3 +1,4 @@
+from typing import Union
 from app.models.schemas import GeminiExtractionResult
 
 # Campos obrigatórios para considerar o atestado completo
@@ -8,7 +9,7 @@ REQUIRED_FIELDS = [
     "quantidade_dias"
 ]
 
-def get_missing_fields(extraction: GeminiExtractionResult | dict) -> list[str]:
+def get_missing_fields(extraction: Union[GeminiExtractionResult, dict]) -> list[str]:
     """Identifica quais campos obrigatórios estão faltando (None ou string vazia)."""
     missing = []
     
@@ -23,6 +24,6 @@ def get_missing_fields(extraction: GeminiExtractionResult | dict) -> list[str]:
             
     return missing
 
-def is_complete(extraction: GeminiExtractionResult | dict) -> bool:
+def is_complete(extraction: Union[GeminiExtractionResult, dict]) -> bool:
     """Verifica se todos os campos obrigatórios estão preenchidos."""
     return len(get_missing_fields(extraction)) == 0

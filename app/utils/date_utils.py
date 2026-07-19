@@ -1,3 +1,4 @@
+from typing import Optional
 from datetime import date, datetime
 
 def calculate_submission_status(issue_date: date, upload_date: date = None) -> str:
@@ -14,7 +15,7 @@ def calculate_submission_status(issue_date: date, upload_date: date = None) -> s
         return "on_time"
     return "retroactive"
 
-def parse_date_br(date_str: str) -> date | None:
+def parse_date_br(date_str: str) -> Optional[date]:
     """Parses a date string in format DD/MM/YYYY to date object."""
     if not date_str:
         return None
