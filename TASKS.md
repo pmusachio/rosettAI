@@ -10,11 +10,11 @@
 
 > Objetivo: preparar o ambiente de desenvolvimento, repositório e serviços externos.
 
-- [ ] **1.1 — Estrutura de diretórios do projeto**
+- [x] **1.1 — Estrutura de diretórios do projeto**
   - Criar a árvore de pastas: `app/`, `app/pages/`, `app/services/`, `app/models/`, `app/utils/`, `sql/`, `tests/`, `docs/`
   - Mover o PRD para `docs/`
 
-- [ ] **1.2 — Configuração do ambiente Python**
+- [x] **1.2 — Configuração do ambiente Python**
   - Criar `requirements.txt` com dependências iniciais:
     - `streamlit>=1.45`
     - `google-genai>=1.14`
@@ -37,7 +37,7 @@
   - Testar chamada básica com `google-genai`
   - Validar que o modelo `gemini-2.0-flash` aceita inputs multimodais (imagem + texto)
 
-- [ ] **1.5 — Configuração do Streamlit**
+- [x] **1.5 — Configuração do Streamlit**
   - Criar `.streamlit/config.toml` com tema visual customizado (cores, fonte)
   - Criar `app/config.py` com carregamento de variáveis via `python-dotenv`
   - Criar `app/main.py` com layout base (sidebar, título, navegação)
@@ -54,7 +54,7 @@
 
 > Objetivo: criar as tabelas, scripts SQL e camada de acesso a dados.
 
-- [ ] **2.1 — Script de criação do schema**
+- [x] **2.1 — Script de criação do schema**
   - Criar `sql/create_schema.sql` com as 3 tabelas:
     - `documents` — controle de arquivos (campos: id UUID PK, file_name, file_url, uploaded_at, accepted_at, document_issue_date, processing_status, submission_status, created_at, updated_at)
     - `medical_certificates` — dados extraídos (campos: id UUID PK, document_id FK, employee_name, employee_cpf, doctor_name, crm, health_facility, cid, issue_date, leave_start_date, leave_end_date, leave_days, document_type)
@@ -62,7 +62,7 @@
   - Incluir constraints, indexes e defaults (`gen_random_uuid()`, `NOW()`)
   - Executar no Supabase SQL Editor e validar
 
-- [ ] **2.2 — Modelos Pydantic**
+- [x] **2.2 — Modelos Pydantic**
   - Criar `app/models/schemas.py` com classes:
     - `DocumentCreate` / `DocumentResponse`
     - `MedicalCertificateCreate` / `MedicalCertificateResponse`
@@ -70,7 +70,7 @@
     - `GeminiExtractionResult` (11 campos do JSON de retorno)
   - Adicionar validações (CPF format, CRM format, datas)
 
-- [ ] **2.3 — Serviço de banco de dados**
+- [x] **2.3 — Serviço de banco de dados**
   - Criar `app/services/database_service.py` com funções:
     - `create_document(file_name, file_url) → DocumentResponse`
     - `update_document_status(doc_id, status)`
@@ -81,7 +81,7 @@
     - `list_documents(limit, offset)` — listagem com paginação
   - Usar client Supabase Python
 
-- [ ] **2.4 — Script de dados de demonstração**
+- [x] **2.4 — Script de dados de demonstração**
   - Criar `sql/insert_demo_data.sql` com pelo menos 5 registros fictícios cobrindo:
     - Atestado completo (todos os campos)
     - Atestado com campos faltantes
@@ -96,7 +96,7 @@
 
 > Objetivo: permitir que o colaborador envie um atestado e o arquivo seja armazenado.
 
-- [ ] **3.1 — Serviço de Storage**
+- [x] **3.1 — Serviço de Storage**
   - Criar `app/services/storage_service.py` com funções:
     - `upload_file(file_bytes, file_name, content_type) → file_url`
     - `get_public_url(file_path) → url`
@@ -104,7 +104,7 @@
   - Gerar nome único para evitar colisões (UUID + extensão original)
   - Configurar políticas de acesso no bucket Supabase
 
-- [ ] **3.2 — Interface de Upload (Streamlit)**
+- [x] **3.2 — Interface de Upload (Streamlit)**
   - Criar `app/pages/01_upload.py` com:
     - `st.file_uploader` aceitando PDF, JPG, PNG (max 10MB)
     - Preview do documento:
@@ -125,14 +125,14 @@
 
 > Objetivo: processar o documento com IA e extrair dados estruturados.
 
-- [ ] **4.1 — Serviço Gemini**
+- [x] **4.1 — Serviço Gemini**
   - Criar `app/services/gemini_service.py` com:
     - Inicialização do client `google.genai`
     - Função `extract_certificate_data(file_bytes, mime_type) → GeminiExtractionResult`
     - Enviar documento como input multimodal (imagem ou PDF)
     - Usar prompt estruturado solicitando JSON com os 11 campos
 
-- [ ] **4.2 — Engenharia de Prompt**
+- [x] **4.2 — Engenharia de Prompt**
   - Criar prompt detalhado em português incluindo:
     - Contexto: "Você é um assistente especializado em extrair dados de atestados médicos brasileiros"
     - Instrução clara de formato JSON esperado
@@ -141,14 +141,14 @@
     - Exemplos de saída esperada (few-shot)
   - Armazenar prompt como constante ou arquivo de template
 
-- [ ] **4.3 — Parser e validação do retorno**
+- [x] **4.3 — Parser e validação do retorno**
   - Implementar parsing do JSON retornado pelo Gemini
   - Tratar casos de JSON malformado (retry ou fallback)
   - Validar campos extraídos usando modelos Pydantic
   - Identificar campos que vieram como `null` (faltantes)
   - Retornar tupla: `(dados_extraidos, campos_faltantes)`
 
-- [ ] **4.4 — Fluxo de processamento completo**
+- [x] **4.4 — Fluxo de processamento completo**
   - Após upload bem-sucedido:
     1. Registrar evento `AI_STARTED`
     2. Chamar `extract_certificate_data()`
@@ -164,7 +164,7 @@
 
 > Objetivo: permitir que o usuário preencha campos que a IA não conseguiu extrair.
 
-- [ ] **5.1 — Detecção de campos faltantes**
+- [x] **5.1 — Detecção de campos faltantes**
   - Criar `app/utils/validators.py` com:
     - `get_missing_fields(extraction_result) → list[str]`
     - `is_complete(extraction_result) → bool`
@@ -172,7 +172,7 @@
     - Campos obrigatórios: `nome_colaborador`, `data_emissao`, `inicio_afastamento`, `quantidade_dias`
     - Campos desejáveis: `cpf`, `crm`, `nome_medico`, `cid`
 
-- [ ] **5.2 — Formulário de complementação**
+- [x] **5.2 — Formulário de complementação**
   - Exibir na mesma página do resultado da IA:
     - Campos já extraídos: pré-preenchidos e editáveis
     - Campos faltantes: destacados em amarelo/vermelho
@@ -185,7 +185,7 @@
     4. Registrar evento `FINALIZED`
     5. Exibir mensagem de sucesso com resumo
 
-- [ ] **5.3 — Cálculo de prazo de envio**
+- [x] **5.3 — Cálculo de prazo de envio**
   - Criar `app/utils/date_utils.py` com:
     - `calculate_submission_status(issue_date, upload_date) → "on_time" | "retroactive"`
     - Regra: até 3 dias corridos após emissão = `on_time`
@@ -201,7 +201,7 @@
 
 > Objetivo: permitir visualização dos atestados processados e queries analíticas.
 
-- [ ] **6.1 — Página de histórico**
+- [x] **6.1 — Página de histórico**
   - Criar `app/pages/02_historico.py` com:
     - Tabela/dataframe com todos os documentos processados
     - Colunas: nome do colaborador, data emissão, dias afastamento, CID, status, prazo
@@ -209,14 +209,14 @@
     - Ordenação por data de upload (mais recente primeiro)
     - Clicar em uma linha → expandir detalhes completos
 
-- [ ] **6.2 — Visualização de detalhes**
+- [x] **6.2 — Visualização de detalhes**
   - Ao expandir um registro:
     - Exibir todos os campos do `medical_certificate`
     - Link para visualizar/baixar o documento original (URL do Storage)
     - Timeline de eventos de processamento (`processing_events`)
     - Badges visuais para status e prazo
 
-- [ ] **6.3 — Queries analíticas SQL**
+- [x] **6.3 — Queries analíticas SQL**
   - Criar `sql/analytics_queries.sql` com consultas prontas:
     - Total de atestados por período (mês/trimestre)
     - Ranking de CIDs mais frequentes
@@ -233,7 +233,7 @@
 
 > Objetivo: garantir que o sistema funciona corretamente antes da demo.
 
-- [ ] **7.1 — Testes unitários**
+- [x] **7.1 — Testes unitários**
   - `tests/test_validators.py`:
     - Testar `get_missing_fields` com dados completos e incompletos
     - Testar `is_complete` com diferentes combinações
