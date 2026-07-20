@@ -12,9 +12,9 @@ from app.models.schemas import DocumentCreate
 from app.utils.validators import get_missing_fields, is_complete
 from app.utils.date_utils import parse_date_br
 
-st.set_page_config(page_title="Upload de Atestado | rosettAI", page_icon="🪨", layout="wide")
+st.set_page_config(page_title="Upload de Atestado | rosettAI", layout="wide")
 render_sidebar()
-st.title("📤 Upload de Atestado")
+st.title("Upload de Atestado")
 
 # Session state to handle multi-step form
 if 'step' not in st.session_state:
@@ -122,14 +122,14 @@ if st.session_state.step == 'upload':
                         st.session_state.step = 'complement'
 
                 except (StorageError, GeminiExtractionError, DatabaseError) as exc:
-                    st.error(f"⚠️ Não foi possível concluir o processamento: {exc}")
+                    st.error(f"Não foi possível concluir o processamento: {exc}")
                     _mark_as_error(doc_id, exc)
                     st.stop()
 
             st.rerun()
 
 elif st.session_state.step == 'complement':
-    st.warning("⚠️ Alguns campos obrigatórios não puderam ser extraídos automaticamente. Por favor, preencha-os.")
+    st.warning("Alguns campos obrigatórios não puderam ser extraídos automaticamente. Por favor, preencha-os.")
 
     extracted = st.session_state.extracted_data
     missing = st.session_state.missing_fields
@@ -194,11 +194,11 @@ elif st.session_state.step == 'complement':
                     st.session_state.step = 'success'
                     st.rerun()
                 except DatabaseError as exc:
-                    st.error(f"⚠️ Não foi possível salvar a complementação: {exc}")
+                    st.error(f"Não foi possível salvar a complementação: {exc}")
                     _mark_as_error(doc_id, exc)
 
 elif st.session_state.step == 'success':
-    st.success("✅ Atestado processado e salvo com sucesso!")
+    st.success("Atestado processado e salvo com sucesso!")
     st.balloons()
 
     if st.button("Enviar Novo Atestado"):

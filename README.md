@@ -1,10 +1,10 @@
-# 🪨 rosettAI
+# rosettAI
 
-> **Por que "rosettAI"?** — Assim como a [Pedra de Rosetta](https://pt.wikipedia.org/wiki/Pedra_de_Roseta) permitiu decifrar hieróglifos ao traduzir uma mesma mensagem entre línguas diferentes, o **rosettAI** decifra atestados médicos — documentos não estruturados, escritos em formatos variados e muitas vezes ilegíveis — e os traduz para dados estruturados que o RH consegue entender e analisar. É a sua **Rosetta Stone** turbinada por **IA**. 🤖
+> **Por que "rosettAI"?** — Assim como a [Pedra de Rosetta](https://pt.wikipedia.org/wiki/Pedra_de_Roseta) permitiu decifrar hieróglifos ao traduzir uma mesma mensagem entre línguas diferentes, o **rosettAI** decifra atestados médicos — documentos não estruturados, escritos em formatos variados e muitas vezes ilegíveis — e os traduz para dados estruturados que o RH consegue entender e analisar. É a sua **Rosetta Stone** turbinada por IA.
 
 ---
 
-## 📋 Sobre o Projeto
+## Sobre o Projeto
 
 Sistema inteligente de processamento de atestados médicos que utiliza **IA generativa (Gemini)** para extrair automaticamente informações de documentos médicos, estruturá-las e armazená-las em banco de dados, eliminando digitação manual e reduzindo erros.
 
@@ -21,7 +21,21 @@ Este é um **MVP / prova de conceito**: um único analista de RH faz os uploads,
 
 ---
 
-## 🏗️ Arquitetura
+## Capturas de Tela
+
+| Upload — antes do envio | Upload — complementação manual |
+|---|---|
+| ![Tela de upload, arquivo selecionado](docs/screenshots/upload_preview.png) | ![Formulário de complementação com campo faltante](docs/screenshots/upload_complement.png) |
+
+| Página inicial | Histórico com detalhes do atestado |
+|---|---|
+| ![Página inicial do rosettAI](docs/screenshots/home.png) | ![Histórico de atestados com detalhes expandidos](docs/screenshots/historico_detail.png) |
+
+> Telas geradas com dados fictícios (ver [docs/demo_guide.md](docs/demo_guide.md) e `scripts/generate_demo_assets.py`) — nenhum atestado real foi usado.
+
+---
+
+## Arquitetura
 
 ```
 Colaborador → Streamlit UI → Upload arquivo
@@ -42,7 +56,7 @@ Colaborador → Streamlit UI → Upload arquivo
                   SQL / Dashboards
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Componente | Tecnologia |
 |---|---|
@@ -56,7 +70,7 @@ Colaborador → Streamlit UI → Upload arquivo
 
 ---
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 rosettAI/
@@ -90,7 +104,8 @@ rosettAI/
 ├── docs/
 │   ├── PRD_Sistema_Inteligente_Atestados_MVP.md
 │   ├── demo_guide.md            # Roteiro de demonstração para o time de RH
-│   └── TUTORIAL_PROXIMOS_PASSOS.md  # Passo a passo do que depende do responsável pelo projeto
+│   ├── TUTORIAL_PROXIMOS_PASSOS.md  # Passo a passo do que depende do responsável pelo projeto
+│   └── screenshots/             # Capturas de tela usadas neste README
 ├── .env.example                 # Template de variáveis de ambiente
 ├── .python-version              # Versão do Python fixada (3.12)
 ├── .pre-commit-config.yaml      # Hook local de detect-secrets
@@ -105,7 +120,7 @@ rosettAI/
 
 ---
 
-## 🚀 Setup Local
+## Setup Local
 
 ### Pré-requisitos
 
@@ -166,7 +181,7 @@ pytest
 
 ---
 
-## 📊 Modelo de Dados
+## Modelo de Dados
 
 ### `documents` — Controle de arquivos
 
@@ -214,7 +229,7 @@ pytest
 
 ---
 
-## 🧭 Decisões de Escopo e Arquitetura
+## Decisões de Escopo e Arquitetura
 
 - **Prazo de envio é responsabilidade do ADP, não do rosettAI.** O sistema ADP da empresa já classifica envios como dentro do prazo ou retroativo. O rosettAI apenas captura e armazena as datas (`document_issue_date`, `issue_date`, `leave_start_date`, `leave_end_date`) — qualquer sistema de RH pode aplicar suas próprias regras sobre elas.
 - **Banco/Storage ficam no Supabase, não SQLite.** O deploy é no Render, cujo disco é efêmero (reseta a cada deploy/restart) a menos que se contrate um disco persistente. SQLite perderia dados silenciosamente nesse ambiente; o Supabase (free tier) já resolve banco + storage sem esse risco. Revisitar apenas se o compute migrar para algo com disco persistente.
@@ -223,7 +238,7 @@ pytest
 
 ---
 
-## 📚 Documentação adicional
+## Documentação adicional
 
 - [PRD](docs/PRD_Sistema_Inteligente_Atestados_MVP.md) — objetivo, escopo e regras de negócio
 - [TASKS.md](TASKS.md) — backlog detalhado por épico, com status real de cada item
@@ -232,12 +247,12 @@ pytest
 
 ---
 
-## 📌 Status do Projeto
+## Status do Projeto
 
-🟡 **Em desenvolvimento** — MVP. URL de produção: *a definir após o deploy no Render (ver [docs/TUTORIAL_PROXIMOS_PASSOS.md](docs/TUTORIAL_PROXIMOS_PASSOS.md)).*
+**Em desenvolvimento** — MVP. URL de produção: *a definir após o deploy no Render (ver [docs/TUTORIAL_PROXIMOS_PASSOS.md](docs/TUTORIAL_PROXIMOS_PASSOS.md)).*
 
 ---
 
-## 📄 Licença
+## Licença
 
 Este projeto está licenciado sob a licença MIT — veja o arquivo [LICENSE](LICENSE) para detalhes.

@@ -1,4 +1,4 @@
-# 📋 rosettAI — Backlog Detalhado (MVP)
+# rosettAI — Backlog Detalhado (MVP)
 
 > Todas as tasks necessárias para entregar o MVP funcional e demonstrável para o time de RH.
 > 
@@ -261,7 +261,7 @@
 
 - [x] **8.1 — UI/UX Polish**
   - [x] Sidebar compartilhada com branding (`app/components.py::render_sidebar`)
-  - [x] `st.set_page_config(page_title=..., page_icon="🪨", layout="wide")` em todas as páginas
+  - [x] `st.set_page_config(page_title=..., layout="wide")` em todas as páginas (sem emoji)
   - [x] Mensagens de erro claras via `st.error` nas falhas de IA/Storage/banco (em vez de crash)
   - [x] Tooltips (`help=`) nos campos do formulário de complementação
   - [ ] Tema visual customizado além do `.streamlit/config.toml` atual — não priorizado neste MVP
@@ -286,7 +286,7 @@
 
 ---
 
-## 📅 Ordem de Execução Sugerida
+## Ordem de Execução Sugerida
 
 ```
 Epic 1 (Infraestrutura)
@@ -306,7 +306,7 @@ Epic 8 (Polish + Demo)
 
 ---
 
-## 🎯 Critérios de Aceitação do MVP
+## Critérios de Aceitação do MVP
 
 O MVP está pronto para demonstração quando **todos** os itens abaixo forem verdadeiros:
 

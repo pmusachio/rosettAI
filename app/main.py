@@ -11,20 +11,19 @@ from app.components import render_sidebar
 
 st.set_page_config(
     page_title="rosettAI",
-    page_icon="🪨",
     layout="wide"
 )
 render_sidebar()
 
-st.title("🪨 rosettAI")
+st.title("rosettAI")
 st.markdown("""
 ### Sistema Inteligente de Processamento de Atestados Médicos
 
-Bem-vindo ao **rosettAI**, sua Rosetta Stone para decifrar documentos não estruturados de RH. 🤖
+Bem-vindo ao **rosettAI**, sua Rosetta Stone para decifrar documentos não estruturados de RH.
 
 ---
 
-👈 **Selecione uma opção no menu lateral:**
+**Selecione uma opção no menu lateral:**
 - **Upload de Atestado**: Envie um novo atestado (PDF ou Imagem) para processamento automático via IA.
 - **Histórico**: Consulte os atestados já processados e visualize os dados extraídos.
 """)
