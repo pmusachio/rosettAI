@@ -1,10 +1,20 @@
+import sys
+from pathlib import Path
+
+# `streamlit run app/main.py` não coloca a raiz do projeto no sys.path,
+# o que quebraria todo import `from app.X import Y` nas páginas. Este é o
+# script de entrada, então basta corrigir aqui uma vez por processo.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import streamlit as st
+from app.components import render_sidebar
 
 st.set_page_config(
     page_title="rosettAI",
     page_icon="🪨",
     layout="wide"
 )
+render_sidebar()
 
 st.title("🪨 rosettAI")
 st.markdown("""

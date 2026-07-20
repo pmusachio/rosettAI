@@ -8,6 +8,8 @@
 
 Sistema inteligente de processamento de atestados médicos que utiliza **IA generativa (Gemini)** para extrair automaticamente informações de documentos médicos, estruturá-las e armazená-las em banco de dados, eliminando digitação manual e reduzindo erros.
 
+Este é um **MVP / prova de conceito**: um único analista de RH faz os uploads, os documentos e dados usados em demonstração são fictícios, e algumas decisões de escopo abaixo refletem isso propositalmente.
+
 ### O Problema
 
 | Desafio atual | Solução rosettAI |
@@ -40,8 +42,6 @@ Colaborador → Streamlit UI → Upload arquivo
                   SQL / Dashboards
 ```
 
----
-
 ## 🛠️ Tech Stack
 
 | Componente | Tecnologia |
@@ -51,7 +51,7 @@ Colaborador → Streamlit UI → Upload arquivo
 | IA | Google Gemini API (multimodal) |
 | Banco de Dados | Supabase (PostgreSQL) |
 | Storage | Supabase Storage |
-| Linguagem | Python 3.11+ |
+| Linguagem | Python 3.12+ |
 | Controle de versão | GitHub |
 
 ---
@@ -63,6 +63,7 @@ rosettAI/
 ├── app/
 │   ├── main.py                  # Ponto de entrada Streamlit
 │   ├── config.py                # Configurações e variáveis de ambiente
+│   ├── components.py            # Branding compartilhado (sidebar)
 │   ├── pages/
 │   │   ├── 01_upload.py         # Página de upload de atestados
 │   │   └── 02_historico.py      # Página de histórico/consulta
@@ -73,8 +74,8 @@ rosettAI/
 │   ├── models/
 │   │   └── schemas.py           # Modelos de dados (Pydantic)
 │   └── utils/
-│       ├── validators.py        # Validações de campos
-│       └── date_utils.py        # Cálculos de prazo
+│       ├── validators.py        # Validações de campos obrigatórios
+│       └── date_utils.py        # Parsing de datas (DD/MM/YYYY)
 ├── sql/
 │   ├── create_schema.sql        # DDL das tabelas
 │   ├── insert_demo_data.sql     # Dados de teste
@@ -83,14 +84,21 @@ rosettAI/
 │   ├── test_gemini_service.py
 │   ├── test_validators.py
 │   └── test_date_utils.py
+├── scripts/
+│   └── generate_demo_assets.py  # Gera atestados fictícios para testar o upload
+├── demo_assets/                 # Imagens de atestado fictícias (geradas pelo script acima)
 ├── docs/
-│   └── PRD_Sistema_Inteligente_Atestados_MVP.md
+│   ├── PRD_Sistema_Inteligente_Atestados_MVP.md
+│   ├── demo_guide.md            # Roteiro de demonstração para o time de RH
+│   └── TUTORIAL_PROXIMOS_PASSOS.md  # Passo a passo do que depende do responsável pelo projeto
 ├── .env.example                 # Template de variáveis de ambiente
-├── .gitignore
-├── .streamlit/
-│   └── config.toml              # Configuração visual Streamlit
+├── .python-version              # Versão do Python fixada (3.12)
+├── .pre-commit-config.yaml      # Hook local de detect-secrets
+├── .streamlit/config.toml       # Configuração visual Streamlit
 ├── requirements.txt
+├── requirements-dev.txt         # Ferramentas de dev (pre-commit, detect-secrets)
 ├── Procfile                     # Deploy Render
+├── render.yaml                  # Blueprint do Render (secrets ficam sync:false — nunca no repo)
 ├── LICENSE
 └── README.md
 ```
@@ -101,7 +109,7 @@ rosettAI/
 
 ### Pré-requisitos
 
-- Python 3.11+
+- Python 3.12+ (fixado em `.python-version`)
 - Conta no [Supabase](https://supabase.com) (projeto criado)
 - Chave de API do [Google Gemini](https://ai.google.dev)
 
@@ -112,18 +120,28 @@ rosettAI/
 git clone git@github.com:pmusachio/rosettAI.git
 cd rosettAI
 
-# Crie o ambiente virtual
-python -m venv .venv
+# Crie o ambiente virtual (use a versão do Python fixada em .python-version)
+python3.12 -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 # .venv\Scripts\activate   # Windows
 
 # Instale as dependências
 pip install -r requirements.txt
 
+# Opcional (recomendado): ferramentas de dev + proteção contra commit de secrets
+pip install -r requirements-dev.txt
+pre-commit install
+
 # Configure as variáveis de ambiente
 cp .env.example .env
 # Edite o .env com suas credenciais
 ```
+
+> Sem `GEMINI_API_KEY`/credenciais Supabase configuradas, os serviços caem em
+> modo mock (dados fictícios, sem gravação real) — dá para navegar pela
+> interface localmente antes de ter as credenciais reais. Veja o passo a
+> passo completo de criação de conta/credenciais em
+> [docs/TUTORIAL_PROXIMOS_PASSOS.md](docs/TUTORIAL_PROXIMOS_PASSOS.md).
 
 ### Variáveis de Ambiente
 
@@ -138,6 +156,12 @@ SUPABASE_SERVICE_KEY=sua_chave_service
 
 ```bash
 streamlit run app/main.py
+```
+
+### Testes
+
+```bash
+pytest
 ```
 
 ---
@@ -155,7 +179,6 @@ streamlit run app/main.py
 | accepted_at | TIMESTAMP | Data/hora de aceite |
 | document_issue_date | DATE | Data de emissão do atestado |
 | processing_status | VARCHAR | pending / processing / completed / error |
-| submission_status | VARCHAR | on_time / retroactive |
 | created_at | TIMESTAMP | Criação do registro |
 | updated_at | TIMESTAMP | Última atualização |
 
@@ -187,13 +210,31 @@ streamlit run app/main.py
 | timestamp | TIMESTAMP | Data/hora |
 | details | JSONB | Detalhes adicionais |
 
-**Eventos rastreados:** `UPLOAD_RECEIVED` → `AI_STARTED` → `AI_COMPLETED` → `USER_COMPLEMENTED` → `FINALIZED`
+**Eventos rastreados:** `UPLOAD_RECEIVED` → `AI_STARTED` → `AI_COMPLETED` → (`USER_COMPLEMENTED`) → `FINALIZED`, ou `ERROR` em caso de falha na IA/Storage/banco.
+
+---
+
+## 🧭 Decisões de Escopo e Arquitetura
+
+- **Prazo de envio é responsabilidade do ADP, não do rosettAI.** O sistema ADP da empresa já classifica envios como dentro do prazo ou retroativo. O rosettAI apenas captura e armazena as datas (`document_issue_date`, `issue_date`, `leave_start_date`, `leave_end_date`) — qualquer sistema de RH pode aplicar suas próprias regras sobre elas.
+- **Banco/Storage ficam no Supabase, não SQLite.** O deploy é no Render, cujo disco é efêmero (reseta a cada deploy/restart) a menos que se contrate um disco persistente. SQLite perderia dados silenciosamente nesse ambiente; o Supabase (free tier) já resolve banco + storage sem esse risco. Revisitar apenas se o compute migrar para algo com disco persistente.
+- **Deploy continua no Render nesta fase do MVP.** Google Cloud (Cloud Run) e BigQuery só entram em cena se a empresa decidir comprar a solução — não fazem parte do escopo atual.
+- **Controle de acesso (login) fica fora de escopo por enquanto**, já que apenas o analista de RH usa a aplicação nesta primeira fase. Isso é diferente de segurança de secrets/API keys, que continua obrigatória porque o *código-fonte* é público no GitHub: nunca comitar `.env`; chaves reais são preenchidas manualmente no painel do Render (`sync: false` no `render.yaml`); e há um hook local de `detect-secrets` via `pre-commit` para pegar isso antes do commit.
+
+---
+
+## 📚 Documentação adicional
+
+- [PRD](docs/PRD_Sistema_Inteligente_Atestados_MVP.md) — objetivo, escopo e regras de negócio
+- [TASKS.md](TASKS.md) — backlog detalhado por épico, com status real de cada item
+- [docs/demo_guide.md](docs/demo_guide.md) — roteiro para demonstrar o MVP ao time de RH
+- [docs/TUTORIAL_PROXIMOS_PASSOS.md](docs/TUTORIAL_PROXIMOS_PASSOS.md) — passo a passo de tudo que depende de conta/credenciais do responsável pelo projeto (Supabase, Gemini, deploy no Render)
 
 ---
 
 ## 📌 Status do Projeto
 
-🟡 **Em desenvolvimento** — MVP
+🟡 **Em desenvolvimento** — MVP. URL de produção: *a definir após o deploy no Render (ver [docs/TUTORIAL_PROXIMOS_PASSOS.md](docs/TUTORIAL_PROXIMOS_PASSOS.md)).*
 
 ---
 

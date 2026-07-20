@@ -15,16 +15,17 @@
   - Mover o PRD para `docs/`
 
 - [x] **1.2 — Configuração do ambiente Python**
-  - Criar `requirements.txt` com dependências iniciais:
-    - `streamlit>=1.45`
-    - `google-genai>=1.14`
-    - `supabase>=2.15`
-    - `python-dotenv>=1.1`
-    - `pydantic>=2.11`
-    - `Pillow>=11.2`
-    - `pytest>=8.3`
+  - Criar `requirements.txt` com dependências (mantidas nas versões estáveis mais recentes):
+    - `streamlit>=1.59`
+    - `google-genai>=2.12`
+    - `supabase>=2.31`
+    - `python-dotenv>=1.2`
+    - `pydantic>=2.13`
+    - `Pillow>=12.3`
+    - `pytest>=9.1`
   - Criar `.env.example` com template das variáveis
-  - Configurar `.venv` local e validar instalação
+  - Fixar a versão do Python em `.python-version` (3.12 — o 3.9 usado antes está EOL desde out/2025) e validar instalação
+  - `requirements-dev.txt` com ferramentas de dev (`pre-commit`, `detect-secrets`)
 
 - [ ] **1.3 — Configurar projeto Supabase**
   - Criar projeto no Supabase
@@ -43,10 +44,12 @@
   - Criar `app/main.py` com layout base (sidebar, título, navegação)
 
 - [ ] **1.6 — Configurar deploy no Render**
-  - Criar `Procfile`: `web: streamlit run app/main.py --server.port=$PORT --server.address=0.0.0.0`
-  - Configurar Web Service no Render apontando para o repo GitHub
-  - Adicionar variáveis de ambiente no painel do Render
-  - Validar deploy com página "Hello World"
+  - [x] Criar `Procfile`: `web: streamlit run app/main.py --server.port=$PORT --server.address=0.0.0.0`
+  - [x] Criar `render.yaml` (blueprint) com o Web Service e as env vars marcadas `sync: false` (valor preenchido manualmente no painel, nunca commitado)
+  - [ ] Importar o blueprint no Render apontando para o repo GitHub *(depende da conta Render do responsável pelo projeto)*
+  - [ ] Preencher as variáveis de ambiente no painel do Render *(depende de credenciais reais — ver 1.3/1.4)*
+  - [ ] Validar deploy com página "Hello World"
+  - Nota: fica no Render nesta fase do MVP — Google Cloud/Cloud Run só entra em cena se a empresa comprar a solução.
 
 ---
 
@@ -56,7 +59,7 @@
 
 - [x] **2.1 — Script de criação do schema**
   - Criar `sql/create_schema.sql` com as 3 tabelas:
-    - `documents` — controle de arquivos (campos: id UUID PK, file_name, file_url, uploaded_at, accepted_at, document_issue_date, processing_status, submission_status, created_at, updated_at)
+    - `documents` — controle de arquivos (campos: id UUID PK, file_name, file_url, uploaded_at, accepted_at, document_issue_date, processing_status, created_at, updated_at)
     - `medical_certificates` — dados extraídos (campos: id UUID PK, document_id FK, employee_name, employee_cpf, doctor_name, crm, health_facility, cid, issue_date, leave_start_date, leave_end_date, leave_days, document_type)
     - `processing_events` — auditoria (campos: id UUID PK, document_id FK, event_type, timestamp, details JSONB)
   - Incluir constraints, indexes e defaults (`gen_random_uuid()`, `NOW()`)
@@ -82,13 +85,13 @@
   - Usar client Supabase Python
 
 - [x] **2.4 — Script de dados de demonstração**
-  - Criar `sql/insert_demo_data.sql` com pelo menos 5 registros fictícios cobrindo:
-    - Atestado completo (todos os campos)
-    - Atestado com campos faltantes
-    - Envio dentro do prazo
-    - Envio retroativo
-    - Diferentes CIDs e quantidades de dias
-  - Validar inserção no Supabase
+  - Criar `sql/insert_demo_data.sql` com 5 registros fictícios cobrindo:
+    - Atestado completo, extraído 100% pela IA (João Silva)
+    - Atestado com campo obrigatório faltante, complementado manualmente (Maria Oliveira)
+    - Diferentes CIDs e quantidades de dias (Carlos Souza, Ana Pereira)
+    - Fluxo 100% automático sem intervenção humana (Ana Pereira)
+    - Atestado ainda pendente de complementação (Pedro Santos)
+  - [ ] Validar inserção no Supabase *(depende do projeto Supabase real — ver 1.3)*
 
 ---
 
@@ -185,15 +188,10 @@
     4. Registrar evento `FINALIZED`
     5. Exibir mensagem de sucesso com resumo
 
-- [x] **5.3 — Cálculo de prazo de envio**
-  - Criar `app/utils/date_utils.py` com:
-    - `calculate_submission_status(issue_date, upload_date) → "on_time" | "retroactive"`
-    - Regra: até 3 dias corridos após emissão = `on_time`
-    - Acima de 3 dias = `retroactive`
-  - Exibir badge visual no resultado:
-    - 🟢 "Envio dentro do prazo" 
-    - 🟡 "Envio retroativo — ajuste de absenteísmo necessário"
-  - Salvar `submission_status` na tabela `documents`
+- [x] ~~5.3 — Cálculo de prazo de envio~~ **(fora de escopo — decisão de produto)**
+  - A classificação on_time/retroactive é responsabilidade do sistema ADP, não do rosettAI.
+  - `calculate_submission_status`, os badges de prazo e a coluna `submission_status` foram removidos do código e do schema.
+  - O rosettAI mantém apenas a captura das datas brutas (`document_issue_date`, `issue_date`, `leave_start_date`, `leave_end_date`) via `app/utils/date_utils.py::parse_date_br`.
 
 ---
 
@@ -204,8 +202,8 @@
 - [x] **6.1 — Página de histórico**
   - Criar `app/pages/02_historico.py` com:
     - Tabela/dataframe com todos os documentos processados
-    - Colunas: nome do colaborador, data emissão, dias afastamento, CID, status, prazo
-    - Filtros: por status (pendente/completo), por período, por colaborador
+    - Colunas: nome do colaborador, data emissão, dias afastamento, CID, status
+    - Filtros: por status (pendente/completo), por período, por colaborador *(ainda não implementado — ver observação abaixo)*
     - Ordenação por data de upload (mais recente primeiro)
     - Clicar em uma linha → expandir detalhes completos
 
@@ -214,14 +212,13 @@
     - Exibir todos os campos do `medical_certificate`
     - Link para visualizar/baixar o documento original (URL do Storage)
     - Timeline de eventos de processamento (`processing_events`)
-    - Badges visuais para status e prazo
+    - Badge visual para status
 
 - [x] **6.3 — Queries analíticas SQL**
   - Criar `sql/analytics_queries.sql` com consultas prontas:
     - Total de atestados por período (mês/trimestre)
     - Ranking de CIDs mais frequentes
     - Média de dias de afastamento por CID
-    - Proporção envios no prazo vs retroativos
     - Colaboradores com mais atestados no período
     - Taxa de campos complementados manualmente (qualidade da IA)
     - Total de dias de absenteísmo por mês
@@ -238,14 +235,13 @@
     - Testar `get_missing_fields` com dados completos e incompletos
     - Testar `is_complete` com diferentes combinações
   - `tests/test_date_utils.py`:
-    - Testar cálculo dentro do prazo (0, 1, 2, 3 dias)
-    - Testar cálculo retroativo (4+ dias)
-    - Testar edge cases (mesma data, datas inválidas)
+    - Testar `parse_date_br` (formato BR, ISO, string vazia, inválida)
   - `tests/test_gemini_service.py`:
     - Mock da API Gemini
-    - Testar parsing de JSON válido
-    - Testar tratamento de JSON malformado
-    - Testar campos nulos
+    - Testar parsing de JSON válido, com crases de markdown e campos nulos
+    - Testar tratamento de JSON malformado (fallback)
+    - Testar erro de rede/timeout da API (`GeminiExtractionError`)
+    - Testar caminho sem `GEMINI_API_KEY` configurada (mock local)
 
 - [ ] **7.2 — Teste de integração end-to-end**
   - Testar fluxo completo com um atestado de teste:
@@ -255,6 +251,7 @@
     4. Consulta no histórico → registro visível
     5. Query SQL → dados retornam corretamente
   - Documentar resultado em `docs/test_results.md`
+  - *Depende de credenciais reais de Supabase/Gemini (1.3/1.4) — ver [docs/TUTORIAL_PROXIMOS_PASSOS.md](docs/TUTORIAL_PROXIMOS_PASSOS.md)*
 
 ---
 
@@ -262,35 +259,30 @@
 
 > Objetivo: tornar o MVP apresentável e impressionante para o time de RH.
 
-- [ ] **8.1 — UI/UX Polish**
-  - Adicionar logo/ícone do rosettAI na sidebar
-  - Configurar tema visual consistente (cores, fontes)
-  - Adicionar `st.set_page_config(page_title="rosettAI", page_icon="🪨", layout="wide")`
-  - Melhorar mensagens de feedback (sucesso, erro, loading)
-  - Adicionar tooltips e instruções nos campos do formulário
-  - Garantir responsividade em diferentes tamanhos de tela
+- [x] **8.1 — UI/UX Polish**
+  - [x] Sidebar compartilhada com branding (`app/components.py::render_sidebar`)
+  - [x] `st.set_page_config(page_title=..., page_icon="🪨", layout="wide")` em todas as páginas
+  - [x] Mensagens de erro claras via `st.error` nas falhas de IA/Storage/banco (em vez de crash)
+  - [x] Tooltips (`help=`) nos campos do formulário de complementação
+  - [ ] Tema visual customizado além do `.streamlit/config.toml` atual — não priorizado neste MVP
 
-- [ ] **8.2 — Dados de demonstração realistas**
-  - Criar 3-5 atestados médicos fictícios (imagens/PDFs) para demo
-  - Garantir variedade: atestado legível, parcialmente legível, com dados faltantes
-  - Não usar dados reais — criar documentos ficcionais mas visualmente realistas
-  - Popular banco com dados de demo via `insert_demo_data.sql`
+- [x] **8.2 — Dados de demonstração realistas**
+  - [x] Script `scripts/generate_demo_assets.py` gera 2 atestados fictícios (`demo_assets/`): um legível/completo, um parcialmente ilegível com dados faltantes
+  - [x] `sql/insert_demo_data.sql` com 5 registros cobrindo os cenários do MVP
+  - [ ] Popular o Supabase real com esses dados *(depende do projeto Supabase — ver 1.3)*
 
 - [ ] **8.3 — Deploy final no Render**
-  - Verificar que todas as variáveis de ambiente estão configuradas
-  - Fazer deploy da branch `main`
-  - Testar URL pública com fluxo completo
-  - Verificar performance (tempo de resposta da IA < 30s)
-  - Preparar URL para compartilhar com o time de RH
+  - [x] `render.yaml` (blueprint) pronto para importar no Render
+  - [ ] Verificar que todas as variáveis de ambiente estão configuradas *(depende da conta Render)*
+  - [ ] Fazer deploy da branch `main`
+  - [ ] Testar URL pública com fluxo completo
+  - [ ] Verificar performance (tempo de resposta da IA < 30s)
+  - [ ] Preparar URL para compartilhar com o time de RH
 
-- [ ] **8.4 — Documentação final**
-  - Atualizar README com URL de produção
-  - Criar `docs/demo_guide.md` com roteiro da demonstração:
-    - Passo a passo da demo
-    - Talking points para o time de RH
-    - Perguntas esperadas e respostas
-    - Métricas de sucesso do MVP
-  - Garantir que o PRD está atualizado
+- [x] **8.4 — Documentação final**
+  - [x] Criar `docs/demo_guide.md` com roteiro da demonstração
+  - [x] Garantir que o PRD está atualizado (decisão ADP, Render mantido)
+  - [ ] Atualizar README com URL de produção *(depende do deploy em 8.3)*
 
 ---
 
@@ -325,7 +317,6 @@ O MVP está pronto para demonstração quando **todos** os itens abaixo forem ve
 - [ ] Colaborador consegue complementar dados manualmente
 - [ ] Dados são persistidos no PostgreSQL
 - [ ] Timestamps e eventos de auditoria são registrados
-- [ ] Cálculo de prazo (normal vs retroativo) funciona
 - [ ] Histórico de atestados é consultável na interface
 - [ ] Queries SQL analíticas retornam dados corretos
 - [ ] Aplicação está acessível via URL pública (Render)

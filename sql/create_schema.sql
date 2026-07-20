@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS documents (
     accepted_at TIMESTAMP WITH TIME ZONE,
     document_issue_date DATE,
     processing_status VARCHAR(50) DEFAULT 'pending', -- pending, processing, completed, error
-    submission_status VARCHAR(50), -- on_time, retroactive
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

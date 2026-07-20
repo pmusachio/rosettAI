@@ -64,7 +64,9 @@ Criar uma aplicação online onde o colaborador possa:
 -   Validação de campos obrigatórios.
 -   Formulário de complementação.
 -   Registro de timestamps.
--   Classificação de envio dentro do prazo ou retroativo.
+-   Registro das datas de emissão, início e fim do afastamento (a
+    classificação de prazo é feita pelo sistema ADP, fora do escopo do
+    rosettAI).
 -   Persistência em PostgreSQL.
 -   Scripts SQL para testes e análises.
 
@@ -109,19 +111,14 @@ Criar uma aplicação online onde o colaborador possa:
 
 ## Prazo de envio
 
-O colaborador possui até 3 dias corridos após a data de emissão do
-atestado.
+A classificação do envio como dentro do prazo ou retroativo é feita
+pelo sistema ADP, que já concentra essa regra para toda a folha de
+pagamento. O rosettAI não replica esse cálculo.
 
-Cálculo:
-
-`data_upload - data_emissao`
-
-Resultado:
-
--   Até 3 dias: envio normal.
--   Acima de 3 dias: retroativo para ajuste de absenteísmo.
-
-O sistema não bloqueia envios retroativos.
+O rosettAI é responsável apenas por capturar e armazenar as datas
+relevantes (emissão, início e fim do afastamento), para que o ADP ou
+qualquer sistema de RH possa aplicar suas próprias regras de prazo
+sobre esses dados.
 
 ------------------------------------------------------------------------
 
@@ -162,7 +159,6 @@ Campos:
 -   accepted_at
 -   document_issue_date
 -   processing_status
--   submission_status
 -   created_at
 -   updated_at
 

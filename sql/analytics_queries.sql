@@ -28,16 +28,7 @@ WHERE cid IS NOT NULL AND leave_days IS NOT NULL
 GROUP BY cid
 ORDER BY media_dias DESC;
 
--- 4. Proporção de envios no prazo vs retroativos
-SELECT 
-    submission_status,
-    COUNT(*) AS quantidade,
-    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 1) AS percentual
-FROM documents
-WHERE processing_status = 'completed' AND submission_status IS NOT NULL
-GROUP BY submission_status;
-
--- 5. Colaboradores com mais atestados no período
+-- 4. Colaboradores com mais atestados no período
 SELECT 
     employee_name,
     COUNT(*) AS total_atestados,
@@ -48,7 +39,7 @@ GROUP BY employee_name
 ORDER BY total_atestados DESC
 LIMIT 10;
 
--- 6. Total de dias de absenteísmo por mês (baseado na data de início do afastamento)
+-- 5. Total de dias de absenteísmo por mês (baseado na data de início do afastamento)
 SELECT 
     DATE_TRUNC('month', leave_start_date) AS mes_afastamento,
     SUM(leave_days) AS total_dias
@@ -57,7 +48,7 @@ WHERE leave_start_date IS NOT NULL AND leave_days IS NOT NULL
 GROUP BY mes_afastamento
 ORDER BY mes_afastamento DESC;
 
--- 7. Taxa de complementação manual (Auditoria)
+-- 6. Taxa de complementação manual (Auditoria)
 SELECT
     event_type,
     COUNT(*) as total

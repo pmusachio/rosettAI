@@ -1,11 +1,17 @@
 import streamlit as st
 import pandas as pd
-from app.services.database_service import list_documents, get_document_details
+from app.components import render_sidebar
+from app.services.database_service import list_documents, get_document_details, DatabaseError
 
 st.set_page_config(page_title="Histórico | rosettAI", page_icon="🪨", layout="wide")
+render_sidebar()
 st.title("🗂️ Histórico de Atestados")
 
-documents = list_documents()
+try:
+    documents = list_documents()
+except DatabaseError as exc:
+    st.error(f"⚠️ Não foi possível carregar o histórico: {exc}")
+    st.stop()
 
 if not documents:
     st.info("Nenhum atestado encontrado na base de dados.")
@@ -18,8 +24,7 @@ else:
             cert = cert[0]
             
         status_emoji = "✅" if doc.get("processing_status") == "completed" else ("⏳" if doc.get("processing_status") == "pending" else "⚠️")
-        prazo_emoji = "🟢 No Prazo" if doc.get("submission_status") == "on_time" else ("🔴 Retroativo" if doc.get("submission_status") == "retroactive" else "-")
-        
+
         table_data.append({
             "ID": doc.get("id")[:8],
             "Data Upload": doc.get("uploaded_at")[:10] if doc.get("uploaded_at") else "",
@@ -27,7 +32,6 @@ else:
             "CID": cert.get("cid", "N/A"),
             "Dias": cert.get("leave_days", "N/A"),
             "Status": f"{status_emoji} {doc.get('processing_status')}",
-            "Prazo": prazo_emoji,
             "_id": doc.get("id") # Hidden column for fetching details
         })
         
@@ -47,8 +51,12 @@ else:
     
     if selected_id_short:
         full_id = df[df["ID"] == selected_id_short]["_id"].values[0]
-        details = get_document_details(full_id)
-        
+        try:
+            details = get_document_details(full_id)
+        except DatabaseError as exc:
+            st.error(f"⚠️ Não foi possível carregar os detalhes: {exc}")
+            details = None
+
         if details:
             doc = details["document"]
             cert = details["certificate"]

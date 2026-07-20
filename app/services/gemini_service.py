@@ -5,6 +5,11 @@ from google.genai import types
 from app.config import GEMINI_API_KEY
 from app.models.schemas import GeminiExtractionResult
 
+
+class GeminiExtractionError(Exception):
+    """Falha ao chamar a API do Gemini (timeout, rate limit, rede, resposta inválida)."""
+
+
 def extract_certificate_data(file_bytes: bytes, mime_type: str) -> GeminiExtractionResult:
     """
     Sents the document to Gemini and extracts the data as a structured JSON.
@@ -16,20 +21,20 @@ def extract_certificate_data(file_bytes: bytes, mime_type: str) -> GeminiExtract
             quantidade_dias="3",
             data_emissao="01/01/2026"
         )
-        
+
     client = genai.Client(api_key=GEMINI_API_KEY)
-    
+
     prompt = """
     Você é um assistente especializado em extrair dados de atestados médicos brasileiros.
     Analise o documento anexo e extraia as informações no formato JSON rigoroso abaixo.
-    
+
     Regras:
     1. Responda APENAS com um JSON válido, sem markdown (` ```json `), sem texto antes ou depois.
     2. Se um campo não for encontrado, o valor deve ser null.
     3. Datas devem vir no formato DD/MM/YYYY.
     4. CPF deve ter a pontuação (XXX.XXX.XXX-XX).
     5. CRM deve ter uf, ex: CRM-SP 12345.
-    
+
     Formato esperado:
     {
         "nome_colaborador": "string ou null",
@@ -45,24 +50,27 @@ def extract_certificate_data(file_bytes: bytes, mime_type: str) -> GeminiExtract
         "tipo_documento": "string ou null"
     }
     """
-    
+
     # Prepara o documento para envio
     document = types.Part.from_bytes(
         data=file_bytes,
         mime_type=mime_type
     )
-    
-    response = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=[prompt, document],
-        config=types.GenerateContentConfig(
-            temperature=0.0, # Respostas determinísticas
-            response_mime_type="application/json"
+
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[prompt, document],
+            config=types.GenerateContentConfig(
+                temperature=0.0, # Respostas determinísticas
+                response_mime_type="application/json"
+            )
         )
-    )
-    
+    except Exception as exc:
+        raise GeminiExtractionError(f"Falha ao chamar a API do Gemini: {exc}") from exc
+
     text = response.text
-    
+
     # Limpa markdown se o modelo ainda retornar com crases
     if text.startswith("```json"):
         text = text[7:]
@@ -70,7 +78,7 @@ def extract_certificate_data(file_bytes: bytes, mime_type: str) -> GeminiExtract
         text = text[3:]
     if text.endswith("```"):
         text = text[:-3]
-        
+
     try:
         data = json.loads(text)
         return GeminiExtractionResult(**data)
