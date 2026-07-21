@@ -2,9 +2,14 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+from google.genai import errors as genai_errors
 
 from app.models.schemas import GeminiExtractionResult
 from app.services.gemini_service import GeminiExtractionError, extract_certificate_data
+
+
+def _api_error(code, status):
+    return genai_errors.APIError(code, {"error": {"code": code, "message": "falha da API", "status": status}})
 
 VALID_JSON = json.dumps({
     "nome_colaborador": "João Silva",
@@ -108,6 +113,41 @@ def test_extract_certificate_data_api_error_raises_gemini_extraction_error(mock_
 
     with pytest.raises(GeminiExtractionError):
         extract_certificate_data(b"fake-bytes", "image/png")
+
+
+@patch("app.services.gemini_service.time.sleep")
+@patch("app.services.gemini_service.genai.Client")
+@patch("app.services.gemini_service.GEMINI_API_KEY", "fake-key")
+def test_extract_certificate_data_retries_on_transient_error_then_succeeds(mock_client_cls, mock_sleep):
+    parsed = GeminiExtractionResult(nome_colaborador="João Silva")
+    mock_client = MagicMock()
+    mock_client.models.generate_content.side_effect = [
+        _api_error(503, "UNAVAILABLE"),
+        _api_error(503, "UNAVAILABLE"),
+        _mock_response(VALID_JSON, parsed=parsed),
+    ]
+    mock_client_cls.return_value = mock_client
+
+    result = extract_certificate_data(b"fake-bytes", "image/png")
+
+    assert result is parsed
+    assert mock_client.models.generate_content.call_count == 3
+    assert mock_sleep.call_count == 2
+
+
+@patch("app.services.gemini_service.time.sleep")
+@patch("app.services.gemini_service.genai.Client")
+@patch("app.services.gemini_service.GEMINI_API_KEY", "fake-key")
+def test_extract_certificate_data_non_retryable_error_fails_fast(mock_client_cls, mock_sleep):
+    mock_client = MagicMock()
+    mock_client.models.generate_content.side_effect = _api_error(404, "NOT_FOUND")
+    mock_client_cls.return_value = mock_client
+
+    with pytest.raises(GeminiExtractionError):
+        extract_certificate_data(b"fake-bytes", "image/png")
+
+    assert mock_client.models.generate_content.call_count == 1
+    mock_sleep.assert_not_called()
 
 
 def test_extract_certificate_data_without_api_key_returns_mock():

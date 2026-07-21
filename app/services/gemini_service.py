@@ -1,12 +1,31 @@
 import json
+import time
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai import types
 from app.config import GEMINI_API_KEY, GEMINI_MODEL
 from app.models.schemas import GeminiExtractionResult
 
+# Códigos HTTP de sobrecarga/limite transitórios do lado da Google — vale a
+# pena tentar de novo. Outros códigos (404 modelo inexistente, 400 request
+# inválida, 403 sem permissão) não se resolvem tentando de novo.
+RETRYABLE_STATUS_CODES = {429, 500, 503, 504}
+MAX_ATTEMPTS = 3
+RETRY_BACKOFF_SECONDS = 2
+
 
 class GeminiExtractionError(Exception):
     """Falha ao chamar a API do Gemini (timeout, rate limit, rede, resposta inválida)."""
+
+
+def _generate_with_retry(client, **kwargs):
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            return client.models.generate_content(**kwargs)
+        except genai_errors.APIError as exc:
+            if exc.code not in RETRYABLE_STATUS_CODES or attempt == MAX_ATTEMPTS - 1:
+                raise
+            time.sleep(RETRY_BACKOFF_SECONDS * (attempt + 1))
 
 
 def extract_certificate_data(file_bytes: bytes, mime_type: str) -> GeminiExtractionResult:
@@ -41,7 +60,8 @@ def extract_certificate_data(file_bytes: bytes, mime_type: str) -> GeminiExtract
     )
 
     try:
-        response = client.models.generate_content(
+        response = _generate_with_retry(
+            client,
             model=GEMINI_MODEL,
             contents=[prompt, document],
             config=types.GenerateContentConfig(
