@@ -1,4 +1,6 @@
-streamlit>=1.59
+# Fixado (não >=): o frontend do Streamlit é um build estático empacotado no
+# wheel; queremos garantir a mesma versão testada localmente no deploy.
+streamlit==1.59.2
 google-genai>=2.12
 supabase>=2.31
 python-dotenv>=1.2
