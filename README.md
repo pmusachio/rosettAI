@@ -173,6 +173,13 @@ SUPABASE_SERVICE_KEY=sua_chave_service
 streamlit run app/main.py
 ```
 
+> Rode isso no mesmo terminal onde ativou o `.venv` (`source .venv/bin/activate`).
+> Se abrir uma aba/janela nova, o `.venv` não fica ativado automaticamente —
+> `which streamlit` deve apontar para `.venv/bin/streamlit`; se apontar para
+> outro lugar (ex: um Streamlit global instalado fora do projeto), você verá
+> `ModuleNotFoundError` para as dependências do projeto. Nesse caso, ative o
+> `.venv` de novo ou rode direto `.venv/bin/streamlit run app/main.py`.
+
 ### Testes
 
 ```bash
