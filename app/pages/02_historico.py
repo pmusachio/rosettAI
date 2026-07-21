@@ -26,9 +26,12 @@ else:
     # Prepare data for table
     table_data = []
     for doc in documents:
-        cert = doc.get("medical_certificates", {})
-        if isinstance(cert, list) and len(cert) > 0:
-            cert = cert[0]
+        # A relação document_id é UNIQUE em medical_certificates, então o
+        # Supabase embute como objeto único (ou null), não como lista -
+        # mas cobrimos os dois formatos por segurança.
+        cert = doc.get("medical_certificates") or {}
+        if isinstance(cert, list):
+            cert = cert[0] if cert else {}
 
         status_label = STATUS_LABELS.get(doc.get("processing_status"), doc.get("processing_status"))
 

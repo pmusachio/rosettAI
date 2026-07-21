@@ -27,20 +27,19 @@
   - Fixar a versão do Python em `.python-version` (3.12 — o 3.9 usado antes está EOL desde out/2025) e validar instalação
   - `requirements-dev.txt` com ferramentas de dev (`pre-commit`, `detect-secrets`)
 
-- [ ] **1.3 — Configurar projeto Supabase**
-  - Criar projeto no Supabase
-  - Criar bucket `atestados` no Supabase Storage (público ou com policy)
-  - Obter credenciais: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_KEY`
-  - Testar conexão via script Python simples
+- [x] **1.3 — Configurar projeto Supabase**
+  - [x] Criar projeto no Supabase
+  - [x] Criar bucket `atestados` no Supabase Storage
+  - [x] Obter credenciais: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_KEY`
+  - [x] Testar conexão de verdade (upload real + insert real, validado nesta rodada — ver commits `fae7dbf` e o fix de `medical_certificates` embutido em `02_historico.py`)
 
-- [ ] **1.4 — Configurar API Gemini**
-  - Criar chave de API no Google AI Studio
-  - Testar chamada básica com `google-genai`
-  - Validar que o modelo configurado em `GEMINI_MODEL` (padrão: `gemini-3.5-flash`,
-    ver `app/config.py`) aceita inputs multimodais (imagem + texto). A Google
-    tem restringido/descontinuado modelos com pouco aviso para chaves novas —
-    se der 404 `NOT_FOUND`, é isso; troque `GEMINI_MODEL` no `.env` (local) ou
-    no painel do Render (produção), sem precisar mexer no código.
+- [x] **1.4 — Configurar API Gemini**
+  - [x] Criar chave de API no Google AI Studio
+  - [x] Testar chamada real com `google-genai` contra os dois atestados fictícios (completo e parcial) — extração correta nos dois casos
+  - Nota: o modelo é configurável via `GEMINI_MODEL` (padrão: `gemini-3.5-flash`,
+    ver `app/config.py`). A Google tem restringido/descontinuado modelos com
+    pouco aviso para chaves novas — se der 404 `NOT_FOUND`, troque `GEMINI_MODEL`
+    no `.env` (local) ou no painel do Render (produção), sem precisar mexer no código.
 
 - [x] **1.5 — Configuração do Streamlit**
   - Criar `.streamlit/config.toml` com tema visual customizado (cores, fonte)
@@ -247,15 +246,19 @@
     - Testar erro de rede/timeout da API (`GeminiExtractionError`)
     - Testar caminho sem `GEMINI_API_KEY` configurada (mock local)
 
-- [ ] **7.2 — Teste de integração end-to-end**
-  - Testar fluxo completo com um atestado de teste:
-    1. Upload de arquivo → armazenamento confirmado
-    2. Processamento IA → dados extraídos corretamente
-    3. Complementação (se necessário) → dados salvos
-    4. Consulta no histórico → registro visível
-    5. Query SQL → dados retornam corretamente
-  - Documentar resultado em `docs/test_results.md`
-  - *Depende de credenciais reais de Supabase/Gemini (1.3/1.4) — ver [docs/TUTORIAL_PROXIMOS_PASSOS.md](docs/TUTORIAL_PROXIMOS_PASSOS.md)*
+- [x] **7.2 — Teste de integração end-to-end**
+  - Testado o fluxo completo pela UI, contra Supabase/Gemini reais, com os
+    dois atestados fictícios de `demo_assets/`:
+    1. [x] Upload de arquivo → armazenamento confirmado no bucket `atestados`
+    2. [x] Processamento IA → dados extraídos corretamente (caso completo: Ana Pereira, direto para sucesso)
+    3. [x] Complementação → caso parcial (Fernando Rocha) caiu no formulário como esperado, campos preenchidos e salvos
+    4. [x] Consulta no histórico → os dois registros apareceram corretamente
+    5. [ ] Query SQL analítica → ainda não rodada manualmente no SQL Editor (baixo risco, é só conferir `sql/analytics_queries.sql`)
+  - Esse teste revelou e corrigiu dois bugs reais: o modelo Gemini descontinuado
+    (ver commit `30cf421`) e o parsing de `medical_certificates` em
+    `02_historico.py`, que assumia lista mas o Supabase retorna objeto único
+    (relação 1:1 via `UNIQUE(document_id)`).
+  - Registros de teste criados durante a validação foram removidos do Supabase.
 
 ---
 
@@ -314,13 +317,13 @@ Epic 8 (Polish + Demo)
 
 O MVP está pronto para demonstração quando **todos** os itens abaixo forem verdadeiros:
 
-- [ ] Colaborador consegue enviar um atestado (PDF, JPG ou PNG)
-- [ ] Documento é armazenado no Supabase Storage
-- [ ] IA extrai informações do documento automaticamente
-- [ ] Sistema detecta e destaca campos faltantes
-- [ ] Colaborador consegue complementar dados manualmente
-- [ ] Dados são persistidos no PostgreSQL
-- [ ] Timestamps e eventos de auditoria são registrados
-- [ ] Histórico de atestados é consultável na interface
-- [ ] Queries SQL analíticas retornam dados corretos
-- [ ] Aplicação está acessível via URL pública (Render)
+- [x] Colaborador consegue enviar um atestado (PDF, JPG ou PNG)
+- [x] Documento é armazenado no Supabase Storage
+- [x] IA extrai informações do documento automaticamente
+- [x] Sistema detecta e destaca campos faltantes
+- [x] Colaborador consegue complementar dados manualmente
+- [x] Dados são persistidos no PostgreSQL
+- [x] Timestamps e eventos de auditoria são registrados
+- [x] Histórico de atestados é consultável na interface
+- [ ] Queries SQL analíticas retornam dados corretos *(scripts prontos em `sql/analytics_queries.sql`, falta rodar manualmente no SQL Editor)*
+- [ ] Aplicação está acessível via URL pública (Render) *(depende do deploy — ver seção 3 do [TUTORIAL_PROXIMOS_PASSOS.md](docs/TUTORIAL_PROXIMOS_PASSOS.md))*
