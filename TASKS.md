@@ -36,7 +36,11 @@
 - [ ] **1.4 — Configurar API Gemini**
   - Criar chave de API no Google AI Studio
   - Testar chamada básica com `google-genai`
-  - Validar que o modelo `gemini-2.0-flash` aceita inputs multimodais (imagem + texto)
+  - Validar que o modelo configurado em `GEMINI_MODEL` (padrão: `gemini-3.5-flash`,
+    ver `app/config.py`) aceita inputs multimodais (imagem + texto). A Google
+    tem restringido/descontinuado modelos com pouco aviso para chaves novas —
+    se der 404 `NOT_FOUND`, é isso; troque `GEMINI_MODEL` no `.env` (local) ou
+    no painel do Render (produção), sem precisar mexer no código.
 
 - [x] **1.5 — Configuração do Streamlit**
   - Criar `.streamlit/config.toml` com tema visual customizado (cores, fonte)

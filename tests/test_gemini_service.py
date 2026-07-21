@@ -21,17 +21,33 @@ VALID_JSON = json.dumps({
 })
 
 
-def _mock_response(text):
+def _mock_response(text, parsed=None):
+    """`parsed=None` simula o SDK não conseguir preencher `response.parsed`
+    (caso em que o serviço cai para o parse manual de `response.text`)."""
     response = MagicMock()
     response.text = text
+    response.parsed = parsed
     return response
 
 
 @patch("app.services.gemini_service.genai.Client")
 @patch("app.services.gemini_service.GEMINI_API_KEY", "fake-key")
-def test_extract_certificate_data_valid_json(mock_client_cls):
+def test_extract_certificate_data_uses_sdk_parsed_result(mock_client_cls):
+    parsed = GeminiExtractionResult(nome_colaborador="João Silva", quantidade_dias="3")
     mock_client = MagicMock()
-    mock_client.models.generate_content.return_value = _mock_response(VALID_JSON)
+    mock_client.models.generate_content.return_value = _mock_response(VALID_JSON, parsed=parsed)
+    mock_client_cls.return_value = mock_client
+
+    result = extract_certificate_data(b"fake-bytes", "image/png")
+
+    assert result is parsed
+
+
+@patch("app.services.gemini_service.genai.Client")
+@patch("app.services.gemini_service.GEMINI_API_KEY", "fake-key")
+def test_extract_certificate_data_valid_json_fallback_parse(mock_client_cls):
+    mock_client = MagicMock()
+    mock_client.models.generate_content.return_value = _mock_response(VALID_JSON, parsed=None)
     mock_client_cls.return_value = mock_client
 
     result = extract_certificate_data(b"fake-bytes", "image/png")
@@ -45,7 +61,7 @@ def test_extract_certificate_data_valid_json(mock_client_cls):
 @patch("app.services.gemini_service.GEMINI_API_KEY", "fake-key")
 def test_extract_certificate_data_malformed_json_falls_back_to_empty(mock_client_cls):
     mock_client = MagicMock()
-    mock_client.models.generate_content.return_value = _mock_response("isso não é um json")
+    mock_client.models.generate_content.return_value = _mock_response("isso não é um json", parsed=None)
     mock_client_cls.return_value = mock_client
 
     result = extract_certificate_data(b"fake-bytes", "image/png")
@@ -56,14 +72,16 @@ def test_extract_certificate_data_malformed_json_falls_back_to_empty(mock_client
 
 @patch("app.services.gemini_service.genai.Client")
 @patch("app.services.gemini_service.GEMINI_API_KEY", "fake-key")
-def test_extract_certificate_data_strips_markdown_fences(mock_client_cls):
+def test_extract_certificate_data_truncated_json_falls_back_to_empty(mock_client_cls):
+    truncated = VALID_JSON[:-1]  # remove a chave de fechamento final
     mock_client = MagicMock()
-    mock_client.models.generate_content.return_value = _mock_response(f"```json\n{VALID_JSON}\n```")
+    mock_client.models.generate_content.return_value = _mock_response(truncated, parsed=None)
     mock_client_cls.return_value = mock_client
 
     result = extract_certificate_data(b"fake-bytes", "image/png")
 
-    assert result.cid == "J01.9"
+    assert isinstance(result, GeminiExtractionResult)
+    assert result.nome_colaborador is None
 
 
 @patch("app.services.gemini_service.genai.Client")
@@ -71,7 +89,7 @@ def test_extract_certificate_data_strips_markdown_fences(mock_client_cls):
 def test_extract_certificate_data_null_fields(mock_client_cls):
     partial = json.dumps({"nome_colaborador": "Maria Oliveira", "cid": None, "quantidade_dias": None})
     mock_client = MagicMock()
-    mock_client.models.generate_content.return_value = _mock_response(partial)
+    mock_client.models.generate_content.return_value = _mock_response(partial, parsed=None)
     mock_client_cls.return_value = mock_client
 
     result = extract_certificate_data(b"fake-bytes", "image/png")

@@ -5,6 +5,9 @@ load_dotenv()
 
 # Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# A Google descontinua/restringe modelos com pouco aviso — configurável para
+# não precisar de deploy toda vez que isso acontecer (ver README).
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
 # Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL")

@@ -1,8 +1,7 @@
 import json
-import re
 from google import genai
 from google.genai import types
-from app.config import GEMINI_API_KEY
+from app.config import GEMINI_API_KEY, GEMINI_MODEL
 from app.models.schemas import GeminiExtractionResult
 
 
@@ -26,29 +25,13 @@ def extract_certificate_data(file_bytes: bytes, mime_type: str) -> GeminiExtract
 
     prompt = """
     Você é um assistente especializado em extrair dados de atestados médicos brasileiros.
-    Analise o documento anexo e extraia as informações no formato JSON rigoroso abaixo.
+    Analise o documento anexo e extraia as informações pedidas.
 
     Regras:
-    1. Responda APENAS com um JSON válido, sem markdown (` ```json `), sem texto antes ou depois.
-    2. Se um campo não for encontrado, o valor deve ser null.
-    3. Datas devem vir no formato DD/MM/YYYY.
-    4. CPF deve ter a pontuação (XXX.XXX.XXX-XX).
-    5. CRM deve ter uf, ex: CRM-SP 12345.
-
-    Formato esperado:
-    {
-        "nome_colaborador": "string ou null",
-        "cpf": "string ou null",
-        "nome_medico": "string ou null",
-        "crm": "string ou null",
-        "estabelecimento_saude": "string ou null",
-        "cid": "string ou null",
-        "data_emissao": "string DD/MM/YYYY ou null",
-        "inicio_afastamento": "string DD/MM/YYYY ou null",
-        "fim_afastamento": "string DD/MM/YYYY ou null",
-        "quantidade_dias": "string ou null",
-        "tipo_documento": "string ou null"
-    }
+    1. Se um campo não for encontrado, o valor deve ser null.
+    2. Datas devem vir no formato DD/MM/YYYY.
+    3. CPF deve ter a pontuação (XXX.XXX.XXX-XX).
+    4. CRM deve ter uf, ex: CRM-SP 12345.
     """
 
     # Prepara o documento para envio
@@ -59,30 +42,33 @@ def extract_certificate_data(file_bytes: bytes, mime_type: str) -> GeminiExtract
 
     try:
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model=GEMINI_MODEL,
             contents=[prompt, document],
             config=types.GenerateContentConfig(
                 temperature=0.0, # Respostas determinísticas
-                response_mime_type="application/json"
+                response_mime_type="application/json",
+                # response_schema explícito: sem ele, alguns modelos param de
+                # gerar o JSON antes de fechar a última chave (finish_reason
+                # STOP, sem MAX_TOKENS) mesmo com response_mime_type=json.
+                response_schema=GeminiExtractionResult,
+                max_output_tokens=1024,
+                # "thinking" não ajuda numa extração estruturada simples e só
+                # consome tokens/latência à toa.
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             )
         )
     except Exception as exc:
         raise GeminiExtractionError(f"Falha ao chamar a API do Gemini: {exc}") from exc
 
-    text = response.text
+    # O SDK já entrega a resposta parseada no schema quando dá certo.
+    if response.parsed is not None:
+        return response.parsed
 
-    # Limpa markdown se o modelo ainda retornar com crases
-    if text.startswith("```json"):
-        text = text[7:]
-    if text.startswith("```"):
-        text = text[3:]
-    if text.endswith("```"):
-        text = text[:-3]
-
+    # Fallback: parse manual caso o parsing automático do SDK falhe.
     try:
-        data = json.loads(text)
+        data = json.loads(response.text)
         return GeminiExtractionResult(**data)
-    except json.JSONDecodeError:
-        print(f"Erro ao parsear JSON: {text}")
+    except (json.JSONDecodeError, TypeError):
+        print(f"Erro ao parsear JSON: {response.text!r}")
         # Retorna objeto vazio se falhar completamente
         return GeminiExtractionResult()

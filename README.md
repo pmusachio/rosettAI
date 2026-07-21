@@ -162,10 +162,18 @@ cp .env.example .env
 
 ```env
 GEMINI_API_KEY=sua_chave_gemini
+GEMINI_MODEL=gemini-3.5-flash
 SUPABASE_URL=https://seu-projeto.supabase.co
 SUPABASE_KEY=sua_chave_anon
 SUPABASE_SERVICE_KEY=sua_chave_service
 ```
+
+> `GEMINI_MODEL` é opcional (tem um padrão em `app/config.py`), mas existe
+> como variável separada porque a Google tem restringido/descontinuado
+> modelos do Gemini com pouco aviso, inclusive para chaves recém-criadas. Se
+> o upload falhar com `404 NOT_FOUND ... no longer available`, troque esse
+> valor por um modelo atual (confira em [ai.google.dev/gemini-api/docs/models](https://ai.google.dev/gemini-api/docs/models))
+> sem precisar alterar código nem fazer novo deploy.
 
 ### Executando
 
