@@ -27,15 +27,25 @@ Cobre a task **1.3** do [TASKS.md](../TASKS.md).
    `atestados` (tem que bater com `BUCKET_NAME` em
    [app/services/storage_service.py](../app/services/storage_service.py)).
    Marque como público — nesta fase do MVP não há documentos reais e o PRD já
-   aceita esse nível de exposição (ver a seção "Decisões técnicas" do
-   [README](../README.md)).
+   aceita esse nível de exposição (ver a seção "Decisões de Escopo e
+   Arquitetura" do [README](../README.md)). Isso libera a *leitura* pública
+   dos arquivos (o link "Visualizar Original" do Histórico depende disso) —
+   não é o que resolve o upload, veja o próximo passo.
 7. Pegue as credenciais em **Project Settings → API**:
    - `Project URL` → `SUPABASE_URL`
    - `anon public` key → `SUPABASE_KEY`
    - `service_role` key → `SUPABASE_SERVICE_KEY` (mais privilegiada — trate
      como senha, nunca cole em chat/documento compartilhado)
+
+   **Importante:** o app usa a `service_role` key para falar com o Supabase
+   (é um backend confiável, a chave nunca é exposta a um navegador), então
+   ela ignora as políticas de RLS. Sem essa variável preenchida, o app cairia
+   de volta para a `anon public` key — e como o bucket "público" só libera
+   *leitura*, o upload falharia com `403 ... new row violates row-level
+   security policy`. Preencher `SUPABASE_SERVICE_KEY` corretamente evita esse
+   erro sem precisar configurar nenhuma policy manualmente no dashboard.
 8. No seu clone local, copie `.env.example` para `.env` (`cp .env.example .env`)
-   e preencha essas três variáveis para poder testar localmente antes do deploy.
+   e preencha as três variáveis para poder testar localmente antes do deploy.
 
 ---
 

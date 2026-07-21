@@ -1,13 +1,6 @@
-from typing import Optional
 import uuid
-from supabase import create_client, Client
-from app.config import SUPABASE_URL, SUPABASE_KEY
+from app.services.supabase_client import supabase
 from app.models.schemas import DocumentCreate, MedicalCertificateCreate, ProcessingEventCreate
-
-# Inicializar client do Supabase
-supabase: Optional[Client] = None
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 class DatabaseError(Exception):
