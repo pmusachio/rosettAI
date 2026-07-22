@@ -28,4 +28,4 @@ Bem-vindo ao **rosettAI**, sua Rosetta Stone para decifrar documentos não estru
 - **Histórico**: Consulte os atestados já processados e visualize os dados extraídos.
 """)
 
-st.info("MVP para validação do fluxo de envio, extração de dados com IA e preenchimento complementar.")
+st.info("Envio de atestado, extração de dados com IA e preenchimento complementar em um único fluxo.")

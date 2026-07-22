@@ -1,4 +1,4 @@
--- Consultas Analíticas (MVP)
+-- Consultas Analíticas
 
 -- 1. Total de atestados por período (mês)
 SELECT 
